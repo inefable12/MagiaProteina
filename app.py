@@ -11,7 +11,8 @@ st.set_page_config(page_title="Preparador de Proteínas", page_icon="🧬")
 
 ############## PERSONALIZACIÓN DE LA BARRA LATERAL ##############
 try:
-    st.sidebar.image("img/logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
+    st.sidebar.image("img/logo.png") #, caption="Dr. Jesus Alvarado-Huayhuaz")
+    st.sidebar.write("Dr. Jesus Alvarado-Huayhuaz")
 except Exception:
     pass
 
