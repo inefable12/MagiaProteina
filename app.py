@@ -11,13 +11,13 @@ st.set_page_config(page_title="Preparador de Proteínas", page_icon="🧬")
 
 ############## PERSONALIZACIÓN DE LA BARRA LATERAL ##############
 try:
-    st.sidebar.image("img/logo.png") #, caption="Dr. Jesus Alvarado-Huayhuaz")
+    st.sidebar.image("img/logo.png", width=200) #, caption="Dr. Jesus Alvarado-Huayhuaz")
     st.sidebar.info("Dr. Jesus Alvarado-Huayhuaz")
 except Exception:
     pass
 
 try:
-    st.sidebar.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjJtM3R2MmE5NXZ0YnNscHB6NmJzZHJvOTF4eTR3Znd1ZWpsZWN2ayZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/f9SgDMEBslfqTPWoIM/giphy.gif", width=400)
+    st.sidebar.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjJtM3R2MmE5NXZ0YnNscHB6NmJzZHJvOTF4eTR3Znd1ZWpsZWN2ayZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/f9SgDMEBslfqTPWoIM/giphy.gif")
 except Exception:
     pass
 
