@@ -10,7 +10,7 @@ import streamlit.components.v1 as components
 st.sidebar.image("img/logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
 
 try:
-    st.sidebar.image("https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3bGZzYmVnZDB2eXRoYXQxd3pmNDlydWU4bWdvYzUxemZyZ3Ywd2NlbSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/RHJUAIZPl1wejTHC51/giphy.gif", width=400)
+    st.sidebar.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjJtM3R2MmE5NXZ0YnNscHB6NmJzZHJvOTF4eTR3Znd1ZWpsZWN2ayZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/f9SgDMEBslfqTPWoIM/giphy.gif", width=400)
 except FileNotFoundError:
     pass
 
