@@ -7,8 +7,9 @@ import py3Dmol
 import streamlit.components.v1 as components
 
 ##############
-st.sidebar.image("img/logo.png",
-                 caption="Dr. Jesus Alvarado-Huayhuaz")
+st.sidebar.image("img/logo.png") #, caption="Dr. Jesus Alvarado-Huayhuaz")
+
+st.sidebar.markdown("## Dr. Jesus Alvarado")
 
 st.markdown("""
 <style>
