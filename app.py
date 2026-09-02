@@ -17,7 +17,7 @@ except FileNotFoundError:
 st.markdown("""
 <style>
     [data-testid="stSidebar"] {
-        background-color: #000000;
+        background-color: #240434;
     }
 </style>
 """, unsafe_allow_html=True)
