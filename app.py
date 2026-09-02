@@ -65,7 +65,7 @@ def render_receptor(pdbqt_string, box_params=None):
     # Renderizado HTML nativo sin necesidad de dependencias de Jupyter
     components.html(view._make_html(), height=500)
 
-st.title("Preparación de Proteínas (PDB a PDBQT)")
+st.title("De PDB a PDBQT")
 st.markdown("""
 Esta herramienta utiliza el motor nativo de **MGLTools** para añadir hidrógenos, calcular cargas de Gasteiger y asignar los tipos de átomos de AutoDock.
 """)
@@ -93,7 +93,7 @@ with tab_subida:
 with tab_descarga:
     st.warning("⚠️ **No recomendable:** La descarga directa automatizada remueve heteroátomos y ligandos a ciegas. No permite reparar residuos faltantes ni seleccionar estados conformacionales específicos, lo cual es crítico para un docking riguroso.")
     
-    pdb_id = st.text_input("Ingrese el identificador PDB (Ej. 1HSG):", max_chars=4).upper()
+    pdb_id = st.text_input("Ingrese el identificador PDB (Ej. Apicoplasto: 7SXL o Falcipaína2: 1YVB):", max_chars=4).upper()
     
     if st.button("Descargar y Procesar"):
         if len(pdb_id) == 4:
