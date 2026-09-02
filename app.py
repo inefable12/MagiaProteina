@@ -2,68 +2,109 @@ import streamlit as st
 import subprocess
 import tempfile
 import os
+import requests
 
-# 1. Configuración de la página
-st.set_page_config(page_title="Preparador de Proteínas (PDBQT)", page_icon="🧬")
+def clean_pdb(pdb_content):
+    """
+    Filtra el contenido del PDB crudo. 
+    Elimina ligandos cocristalizados, moléculas de agua y heteroátomos (HETATM).
+    """
+    cleaned_lines = []
+    for line in pdb_content.splitlines():
+        if line.startswith("HETATM") or line.startswith("CONECT"):
+            continue
+        cleaned_lines.append(line)
+    return "\n".join(cleaned_lines)
 
-st.title("Preparación de Proteínas para Molecular Docking")
+# Configuración de la página
+st.set_page_config(page_title="Preparador de Proteínas", page_icon="🧬")
+
+st.title("Preparación de Proteínas (PDB a PDBQT)")
 st.markdown("""
-Sube un archivo PDB. El sistema utilizará el motor de **MGLTools** para limpiar la estructura, 
-añadir hidrógenos, calcular cargas de Gasteiger y asignar los tipos de átomos de AutoDock.
+Esta herramienta utiliza el motor nativo de **MGLTools** para añadir hidrógenos, calcular cargas de Gasteiger y asignar los tipos de átomos de AutoDock.
 """)
 
-# 2. Cargar el archivo PDB
-uploaded_file = st.file_uploader("Seleccionar archivo PDB (Receptor)", type="pdb")
+# Interfaz con pestañas
+tab_subida, tab_descarga = st.tabs([
+    "📁 Subir Archivo PDB (Recomendado)", 
+    "⬇️ Descargar desde PDB (No recomendable)"
+])
 
-if uploaded_file is not None:
-    # 3. Usar TemporaryDirectory asegura que los archivos se borren al terminar, liberando memoria del servidor
+pdb_content_raw = None
+nombre_archivo = "receptor"
+
+# --- PESTAÑA 1: SUBIDA MANUAL (RECOMENDADA) ---
+with tab_subida:
+    st.info("Recomendado: Sube un archivo PDB que ya hayas inspeccionado y curado visualmente (reparación de loops, selección de cadenas, etc.).")
+    uploaded_file = st.file_uploader("Seleccionar archivo PDB local", type="pdb")
+    
+    if uploaded_file is not None:
+        pdb_content_raw = uploaded_file.getvalue().decode("utf-8")
+        nombre_archivo = uploaded_file.name.split('.')[0]
+        # Para la subida manual, asumimos que el usuario ya limpió lo que quería o dejamos que MGLTools haga lo suyo.
+        # Si también desea forzar la limpieza aquí, puede aplicar clean_pdb. Por ahora, lo limpiamos para asegurar.
+        pdb_content_raw = clean_pdb(pdb_content_raw)
+
+# --- PESTAÑA 2: DESCARGA DESDE PDB (NO RECOMENDABLE) ---
+with tab_descarga:
+    st.warning("⚠️ **No recomendable:** La descarga directa automatizada remueve heteroátomos y ligandos a ciegas. No permite reparar residuos faltantes ni seleccionar estados conformacionales específicos, lo cual es crítico para un docking riguroso.")
+    
+    pdb_id = st.text_input("Ingrese el identificador PDB (Ej. 1HSG):", max_chars=4).upper()
+    
+    if st.button("Descargar y Procesar"):
+        if len(pdb_id) == 4:
+            with st.spinner(f"Obteniendo {pdb_id} desde el Protein Data Bank..."):
+                url = f"https://files.rcsb.org/download/{pdb_id}.pdb"
+                response = requests.get(url)
+                
+                if response.status_code == 200:
+                    st.success(f"Estructura {pdb_id} obtenida correctamente.")
+                    nombre_archivo = pdb_id
+                    # Limpiamos el PDB crudo descargado
+                    pdb_content_raw = clean_pdb(response.text)
+                else:
+                    st.error("No se pudo encontrar el identificador PDB en el servidor.")
+        else:
+            st.error("El identificador PDB debe contener exactamente 4 caracteres.")
+
+# --- PROCESAMIENTO IN SILICO ---
+if pdb_content_raw is not None:
     with tempfile.TemporaryDirectory() as tmpdir:
-        input_pdb = os.path.join(tmpdir, "receptor_input.pdb")
-        output_pdbqt = os.path.join(tmpdir, "receptor_output.pdbqt")
+        input_pdb = os.path.join(tmpdir, f"{nombre_archivo}_input.pdb")
+        output_pdbqt = os.path.join(tmpdir, f"{nombre_archivo}.pdbqt")
 
-        # Guardar el PDB subido temporalmente
-        with open(input_pdb, "wb") as f:
-            f.write(uploaded_file.getvalue())
+        # Guardar el PDB (ya limpio de HETATM) en el temporal
+        with open(input_pdb, "w") as f:
+            f.write(pdb_content_raw)
 
-        st.info("Archivo cargado correctamente. Iniciando procesamiento in silico...")
-
-        with st.spinner("Asignando cargas de Gasteiger y tipos de átomos (esto puede tardar unos segundos)..."):
-            # 4. Llamar al comando global de MGLTools instalado vía GitHub
-            # -A hydrogens: añade hidrógenos polares
-            # -U waters: elimina moléculas de agua automáticamente
+        with st.spinner("Preparando receptor con MGLTools..."):
             command = [
                 "prepare_receptor4", 
                 "-r", input_pdb, 
                 "-o", output_pdbqt, 
                 "-A", "hydrogens",
-                "-U", "waters"
+                "-U", "waters" 
             ]
-            
-            # Ejecutar el proceso en el contenedor de Streamlit
             result = subprocess.run(command, capture_output=True, text=True)
 
-        # 5. Verificar si la conversión fue exitosa
         if os.path.exists(output_pdbqt) and os.path.getsize(output_pdbqt) > 0:
-            st.success("¡Proteína preparada con éxito! Lista para ser usada en AutoDock Vina.")
+            st.success("¡Estructura preparada con éxito!")
             
-            # Leer el archivo generado
             with open(output_pdbqt, "r") as f:
                 pdbqt_content = f.read()
 
-            # Botón de descarga
+            # Botón de descarga del PDBQT final
             st.download_button(
                 label="📥 Descargar Receptor (PDBQT)",
                 data=pdbqt_content,
-                file_name=f"{uploaded_file.name.split('.')[0]}_preparado.pdbqt",
-                mime="text/plain"
+                file_name=f"{nombre_archivo}_preparado.pdbqt",
+                mime="text/plain",
+                type="primary"
             )
             
-            # Mostrar un fragmento del archivo
-            with st.expander("Ver fragmento del archivo PDBQT generado"):
-                st.code(pdbqt_content[:1000] + "\n...\n", language="text")
+            with st.expander("Vista previa del archivo PDBQT"):
+                st.code(pdbqt_content[:1500] + "\n...\n", language="text")
                 
         else:
-            st.error("Hubo un error durante la preparación del receptor.")
-            st.markdown("**Detalles del error del sistema:**")
-            # Mostrar el error exacto que arrojó el motor para poder diagnosticarlo
+            st.error("Falló la conversión. Revisa el registro del sistema:")
             st.code(result.stderr or result.stdout, language="bash")
