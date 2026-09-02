@@ -14,7 +14,7 @@ st.sidebar.image("img/logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
 st.markdown("""
 <style>
     [data-testid="stSidebar"] {
-        background-color: #aabec1;
+        background-color: #711610;
     }
 </style>
 """, unsafe_allow_html=True)
