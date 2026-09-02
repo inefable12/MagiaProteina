@@ -3,6 +3,8 @@ import subprocess
 import tempfile
 import os
 import requests
+import py3Dmol
+from stmol import showmol
 
 def clean_pdb(pdb_content):
     """
@@ -15,6 +17,17 @@ def clean_pdb(pdb_content):
             continue
         cleaned_lines.append(line)
     return "\n".join(cleaned_lines)
+
+def render_receptor(pdbqt_string):
+    """
+    Configura y renderiza el visor 3D para la proteína.
+    """
+    view = py3Dmol.view(width=700, height=500)
+    # py3Dmol lee las coordenadas topológicas del PDBQT al interpretarlo como PDB
+    view.addModel(pdbqt_string, 'pdb')
+    view.setStyle({'cartoon': {'color': 'spectrum'}, 'stick': {'radius': 0.1}})
+    view.zoomTo()
+    showmol(view, height=500, width=700)
 
 # Configuración de la página
 st.set_page_config(page_title="Preparador de Proteínas", page_icon="🧬")
@@ -41,8 +54,6 @@ with tab_subida:
     if uploaded_file is not None:
         pdb_content_raw = uploaded_file.getvalue().decode("utf-8")
         nombre_archivo = uploaded_file.name.split('.')[0]
-        # Para la subida manual, asumimos que el usuario ya limpió lo que quería o dejamos que MGLTools haga lo suyo.
-        # Si también desea forzar la limpieza aquí, puede aplicar clean_pdb. Por ahora, lo limpiamos para asegurar.
         pdb_content_raw = clean_pdb(pdb_content_raw)
 
 # --- PESTAÑA 2: DESCARGA DESDE PDB (NO RECOMENDABLE) ---
@@ -60,7 +71,6 @@ with tab_descarga:
                 if response.status_code == 200:
                     st.success(f"Estructura {pdb_id} obtenida correctamente.")
                     nombre_archivo = pdb_id
-                    # Limpiamos el PDB crudo descargado
                     pdb_content_raw = clean_pdb(response.text)
                 else:
                     st.error("No se pudo encontrar el identificador PDB en el servidor.")
@@ -73,7 +83,6 @@ if pdb_content_raw is not None:
         input_pdb = os.path.join(tmpdir, f"{nombre_archivo}_input.pdb")
         output_pdbqt = os.path.join(tmpdir, f"{nombre_archivo}.pdbqt")
 
-        # Guardar el PDB (ya limpio de HETATM) en el temporal
         with open(input_pdb, "w") as f:
             f.write(pdb_content_raw)
 
@@ -93,17 +102,23 @@ if pdb_content_raw is not None:
             with open(output_pdbqt, "r") as f:
                 pdbqt_content = f.read()
 
-            # Botón de descarga del PDBQT final
-            st.download_button(
-                label="📥 Descargar Receptor (PDBQT)",
-                data=pdbqt_content,
-                file_name=f"{nombre_archivo}_preparado.pdbqt",
-                mime="text/plain",
-                type="primary"
-            )
+            col1, col2 = st.columns([1, 2])
             
-            with st.expander("Vista previa del archivo PDBQT"):
-                st.code(pdbqt_content[:1500] + "\n...\n", language="text")
+            with col1:
+                st.download_button(
+                    label="📥 Descargar Receptor (PDBQT)",
+                    data=pdbqt_content,
+                    file_name=f"{nombre_archivo}_preparado.pdbqt",
+                    mime="text/plain",
+                    type="primary"
+                )
+                
+                with st.expander("Vista previa del texto PDBQT"):
+                    st.code(pdbqt_content[:1500] + "\n...\n", language="text")
+            
+            with col2:
+                st.markdown("### Visualización 3D")
+                render_receptor(pdbqt_content)
                 
         else:
             st.error("Falló la conversión. Revisa el registro del sistema:")
