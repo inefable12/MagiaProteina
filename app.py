@@ -6,12 +6,18 @@ import requests
 import py3Dmol
 import streamlit.components.v1 as components
 
-##############
-st.sidebar.image("img/logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
+# Configuración de la página (Debe ser la primera orden de Streamlit)
+st.set_page_config(page_title="Preparador de Proteínas", page_icon="🧬")
+
+############## PERSONALIZACIÓN DE LA BARRA LATERAL ##############
+try:
+    st.sidebar.image("img/logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
+except Exception:
+    pass
 
 try:
     st.sidebar.image("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjJtM3R2MmE5NXZ0YnNscHB6NmJzZHJvOTF4eTR3Znd1ZWpsZWN2ayZlcD12MV9naWZzX3JlbGF0ZWQmY3Q9Zw/f9SgDMEBslfqTPWoIM/giphy.gif", width=400)
-except FileNotFoundError:
+except Exception:
     pass
 
 st.markdown("""
@@ -21,8 +27,7 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-##############
+#################################################################
 
 def clean_pdb(pdb_content):
     """
@@ -36,20 +41,29 @@ def clean_pdb(pdb_content):
         cleaned_lines.append(line)
     return "\n".join(cleaned_lines)
 
-def render_receptor(pdbqt_string):
+def render_receptor(pdbqt_string, box_params=None):
     """
     Configura y renderiza el visor 3D forzando adaptabilidad al contenedor para que quede centrado.
+    Si se proporcionan parámetros de caja, dibuja el Grid Box de AutoDock Vina.
     """
     view = py3Dmol.view(width=800, height=500)
     view.addModel(pdbqt_string, 'pdb')
     view.setStyle({'cartoon': {'color': 'spectrum'}, 'stick': {'radius': 0.1}})
+    
+    # Dibujar la caja de búsqueda si se definieron los parámetros
+    if box_params:
+        cx, cy, cz, sx, sy, sz = box_params
+        view.addBox({
+            'center': {'x': cx, 'y': cy, 'z': cz},
+            'dimensions': {'w': sx, 'h': sy, 'd': sz},
+            'color': 'red',
+            'wireframe': True
+        })
+        
     view.zoomTo()
     
     # Renderizado HTML nativo sin necesidad de dependencias de Jupyter
     components.html(view._make_html(), height=500)
-
-# Configuración de la página
-st.set_page_config(page_title="Preparador de Proteínas", page_icon="🧬")
 
 st.title("Preparación de Proteínas (PDB a PDBQT)")
 st.markdown("""
@@ -132,8 +146,25 @@ if pdb_content_raw is not None:
             with st.expander("Vista previa del texto PDBQT"):
                 st.code(pdbqt_content[:1500] + "\n...\n", language="text")
             
+            # --- CONFIGURACIÓN DEL GRID BOX (AUTODOCK VINA) ---
+            st.markdown("### 🎯 Configuración del Grid Box (AutoDock Vina)")
+            st.write("Define las coordenadas del centroide y el tamaño de las aristas (Spacing = 1 Å).")
+            
+            col_x, col_y, col_z = st.columns(3)
+            with col_x:
+                cx = st.number_input("Centro X", value=0.0, step=1.0)
+                sx = st.number_input("Tamaño X", value=20.0, min_value=1.0, step=1.0)
+            with col_y:
+                cy = st.number_input("Centro Y", value=0.0, step=1.0)
+                sy = st.number_input("Tamaño Y", value=20.0, min_value=1.0, step=1.0)
+            with col_z:
+                cz = st.number_input("Centro Z", value=0.0, step=1.0)
+                sz = st.number_input("Tamaño Z", value=20.0, min_value=1.0, step=1.0)
+            
+            box_parameters = (cx, cy, cz, sx, sy, sz)
+            
             st.markdown("### Visualización 3D Interactiva")
-            render_receptor(pdbqt_content)
+            render_receptor(pdbqt_content, box_params=box_parameters)
                 
         else:
             st.error("Falló la conversión. Revisa el registro del sistema:")
