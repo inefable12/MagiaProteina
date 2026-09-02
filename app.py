@@ -11,7 +11,7 @@ st.set_page_config(page_title="Preparador de Proteínas", page_icon="🧬")
 
 ############## PERSONALIZACIÓN DE LA BARRA LATERAL ##############
 try:
-    st.sidebar.image("img/logo_gif_img.gif", caption="Dr. Jesus Alvarado-Huayhuaz")
+    st.sidebar.image("img/logo.png", caption="Dr. Jesus Alvarado-Huayhuaz")
 except Exception:
     pass
 
@@ -65,7 +65,8 @@ def render_receptor(pdbqt_string, box_params=None):
     # Renderizado HTML nativo sin necesidad de dependencias de Jupyter
     components.html(view._make_html(), height=500)
 
-st.title("'MagiaProtein' Conversor PDB → PDBQT")
+st.image("img/logo_gif_img.gif", caption="Dr. Jesus Alvarado-Huayhuaz")
+st.title("Conversor PDB → PDBQT")
 st.markdown("""
 Esta herramienta utiliza el motor nativo de **MGLTools** para añadir hidrógenos, calcular cargas de Gasteiger y asignar los tipos de átomos de AutoDock.
 """)
